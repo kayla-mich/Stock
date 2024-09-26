@@ -3,17 +3,18 @@ import spotipy
 import random
 import time
 from spotipy.oauth2 import SpotifyOAuth
+import os 
+from dotenv import load_dotenv # Load environment variables from .env file
+load_dotenv()
 
 # Spotify Credentials
-SPOTIPY_CLIENT_ID = 'c8eac05adc7e4592bf2349d60315fa00'
-SPOTIPY_CLIENT_SECRET = '93be1a9c4cff4b95bfb86dc56442e367'
-REDIRECT_URI = 'http://localhost:8888/callback/'
-SCOPE = 'playlist-modify-private playlist-modify-public user-read-private user-read-email'
-
+SPOTIPY_CLIENT_ID = os.getenv("SPOTIPY_CLIENT_ID")  
+SPOTIPY_CLIENT_SECRET = os.getenv("SPOTIPY_CLIENT_SECRET")
+REDIRECT_URI = os.getenv("REDIRECT_URI") 
 # Alpaca Credentials
-ALPACA_API_KEY = 'PKUMP89HC1SD90KPIR0C'
-ALPACA_API_SECRET = '6GRuTTaHVM9fTe07iUqH16zMgeUaKemPUCUGWSno'
-ALPACA_BASE_URL = 'https://paper-api.alpaca.markets'
+ALPACA_API_KEY = os.getenv("APCA_API_KEY_ID")
+ALPACA_API_SECRET = os.getenv("APCA_API_SECRET_KEY")
+ALPACA_BASE_URL = os.getenv("APCA_API_BASE_URL")
 
 def get_spotify_token():
     """Obtain Spotify access token using OAuth."""
@@ -52,28 +53,37 @@ def trade_stock(symbol, qty, action):
         positions = alpaca.list_positions()
         current_position = next((pos for pos in positions if pos.symbol == symbol), None)
 
-        if action == 'buy' and current_position is None:
-            order = alpaca.submit_order(
-                symbol=symbol,
-                qty=qty,
-                side='buy',
-                type='market',
-                time_in_force='gtc'
-            )
-            print(f"Buy Order Submitted: {order.id} - Status: {order.status}")
-        elif action == 'sell' and current_position is not None:
-            order = alpaca.submit_order(
-                symbol=symbol,
-                qty=qty,
-                side='sell',
-                type='market',
-                time_in_force='gtc'
-            )
-            print(f"Sell Order Submitted: {order.id} - Status: {order.status}")
+        print(f"Current position for {symbol}: {current_position}")  # Log current position
+
+        if action == 'buy':
+            if current_position is None:
+                order = alpaca.submit_order(
+                    symbol=symbol,
+                    qty=qty,
+                    side='buy',
+                    type='market',
+                    time_in_force='gtc'
+                )
+                print(f"Buy Order Submitted: {order.id} - Status: {order.status}")
+            else:
+                print(f"Already holding position for {symbol}. No buy action taken.")
+        elif action == 'sell':
+            if current_position is not None:
+                order = alpaca.submit_order(
+                    symbol=symbol,
+                    qty=qty,
+                    side='sell',
+                    type='market',
+                    time_in_force='gtc'
+                )
+                print(f"Sell Order Submitted: {order.id} - Status: {order.status}")
+            else:
+                print(f"No position to sell for {symbol}. No sell action taken.")
         else:
-            print(f"No action taken for {symbol}.")
+            print(f"No valid action '{action}' for {symbol}.")
     except Exception as e:
         print(f"Error executing order: {e}")
+
 
 def generate_playlist_based_on_stocks(sp, stocks):
     """Generate a Spotify playlist based on stock performance."""
