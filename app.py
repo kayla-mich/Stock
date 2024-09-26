@@ -16,6 +16,8 @@ ALPACA_API_KEY = os.getenv("APCA_API_KEY_ID")
 ALPACA_API_SECRET = os.getenv("APCA_API_SECRET_KEY")
 ALPACA_BASE_URL = os.getenv("APCA_API_BASE_URL")
 
+SCOPE = 'playlist-modify-private playlist-modify-public user-read-private user-read-email'
+
 def get_spotify_token():
     """Obtain Spotify access token using OAuth."""
     sp_oauth = SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID, 
