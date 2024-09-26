@@ -33,10 +33,10 @@ jobs:
       # Run the trading script that contains your trading logic
       run: python app.py
       env:
-        APCA_API_BASE_URL: ${{ secrets.APCA_API_BASE_URL }}
         APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
         APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
-        SPOTIP_CLIENT_ID: ${{ secrets.SPOTIP_CLIENT_ID }}
-        SPOTIP_CLIENT_SECRET: ${{ secrets.SPOTIP_CLIENT_SECRET }}
-        REDIRECT_UR: ${{ secrets.REDIRECT_UR }}
+        APCA_API_BASE_URL: ${{ secrets.APCA_API_BASE_URL }}
+        SPOTIPY_CLIENT_ID: ${{ secrets.SPOTIPY_CLIENT_ID }}
+        SPOTIPY_CLIENT_SECRET: ${{ secrets.SPOTIPY_CLIENT_SECRET }}
+        REDIRECT_URI: ${{ secrets.REDIRECT_URI }}
 
