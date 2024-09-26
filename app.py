@@ -139,7 +139,7 @@ def main():
     ]
 
     try:
-        while True:
+        for _ in range(4):  # Loop will run exactly 4 times
             if not is_market_open():
                 print("Market is closed. Waiting until market opens.")
                 time.sleep(60)  # Wait for a minute before checking again
@@ -157,7 +157,7 @@ def main():
                 print(f"Determined action for AAPL: {action}")  # Log action decision
                 trade_stock('AAPL', 1, action)  # Trade AAPL based on stock data
                 generate_playlist_based_on_stocks(sp, stocks_data)
-            time.sleep(60)  # Adjusted for testing
+            time.sleep(180)  # Adjusted for testing, currently runs every 3 minutes 
     except Exception as e:
         print(f"An error occurred in the main loop: {e}")
 
