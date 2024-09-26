@@ -148,11 +148,11 @@ def main():
             track = get_random_track(sp)
             if track:
                 # Determine action based on stock data
-                #if any(stock['price_change'] > 0 for stock in stocks_data):
-                #    action = 'sell'  # Sell if any stock is up
-                #else:
-                #    action = 'buy'  # Otherwise, buy
-                action = random.choice(['buy', 'sell'])  # Randomly choose buy or sell
+                if any(stock['price_change'] > 0 for stock in stocks_data):
+                    action = 'sell'  # Sell if any stock is up
+                else:
+                    action = 'buy'  # Otherwise, buy
+                #action = random.choice(['buy', 'sell'])  # Randomly choose buy or sell
                 
                 print(f"Determined action for AAPL: {action}")  # Log action decision
                 trade_stock('AAPL', 1, action)  # Trade AAPL based on stock data
