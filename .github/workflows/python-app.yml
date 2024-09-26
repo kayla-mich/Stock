@@ -36,3 +36,7 @@ jobs:
         APCA_API_BASE_URL: ${{ secrets.APCA_API_BASE_URL }}
         APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
         APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+        SPOTIP_CLIENT_ID: ${{ secrets.SPOTIP_CLIENT_ID }}
+        SPOTIP_CLIENT_SECRET: ${{ secrets.SPOTIP_CLIENT_SECRET }}
+        REDIRECT_UR: ${{ secrets.REDIRECT_UR }}
+
