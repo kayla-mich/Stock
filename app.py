@@ -148,15 +148,16 @@ def main():
             track = get_random_track(sp)
             if track:
                 # Determine action based on stock data
-                if any(stock['price_change'] > 0 for stock in stocks_data):
-                    action = 'sell'  # Sell if any stock is up
-                else:
-                    action = 'buy'  # Otherwise, buy
+                #if any(stock['price_change'] > 0 for stock in stocks_data):
+                #    action = 'sell'  # Sell if any stock is up
+                #else:
+                #    action = 'buy'  # Otherwise, buy
+                action = random.choice(['buy', 'sell'])  # Randomly choose buy or sell
                 
                 print(f"Determined action for AAPL: {action}")  # Log action decision
                 trade_stock('AAPL', 1, action)  # Trade AAPL based on stock data
                 generate_playlist_based_on_stocks(sp, stocks_data)
-            time.sleep(10)  # Adjusted for testing
+            time.sleep(60)  # Adjusted for testing
     except Exception as e:
         print(f"An error occurred in the main loop: {e}")
 
