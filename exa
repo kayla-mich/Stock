@@ -19,7 +19,11 @@ ALPACA_BASE_URL = os.getenv("APCA_API_BASE_URL")
 SCOPE = 'playlist-modify-private playlist-modify-public user-read-private user-read-email'
 
 def get_spotify_token():
-    sp_oauth = SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID, client_secret=SPOTIPY_CLIENT_SECRET, redirect_uri=REDIRECT_URI,  scope=SCOPE)
+    """Obtain Spotify access token using OAuth."""
+    sp_oauth = SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID, 
+                            client_secret=SPOTIPY_CLIENT_SECRET, 
+                            redirect_uri=REDIRECT_URI, 
+                            scope=SCOPE)
     token_info = sp_oauth.get_access_token(as_dict=True)
     if not token_info or 'access_token' not in token_info:
         print("Error: Unable to get access token")
@@ -35,7 +39,7 @@ genres = ['Pop', 'Rock', 'Hip-hop', 'Jazz', 'Classical', 'Electronic',
           'Punk', 'Alternative', 'Fall', 'Chill']
 
 def get_random_track(sp):
-#gets a random genre
+    """Fetch a random track from a random genre."""
     random_genre = random.choice(genres)
     results = sp.search(q=f'genre:{random_genre}', type='track', limit=10)
     if results['tracks']['items']:
@@ -45,7 +49,7 @@ def get_random_track(sp):
     return None
 
 def trade_stock(symbol, qty, action):
-#writes out what will print for buy or sell
+    """Execute buy or sell orders based on the action."""
     try:
         # Check current position
         positions = alpaca.list_positions()
@@ -84,7 +88,7 @@ def trade_stock(symbol, qty, action):
 
 
 def generate_playlist_based_on_stocks(sp, stocks):
-#creates the playlist based on the stocks
+    """Generate a Spotify playlist based on stock performance."""
     mood = (
         "happy" if any(stock['price_change'] > 0 for stock in stocks) else
         "sad" if all(stock['price_change'] < 0 for stock in stocks) else
@@ -92,7 +96,6 @@ def generate_playlist_based_on_stocks(sp, stocks):
         "relaxed" if all(stock['price_change'] == 0 for stock in stocks) else
         "nostalgic"
     )
-    print(f"Determined mood for playlist creation based on AAPL: {mood}")
 
     genre_mapping = {
         "happy": ["Pop", "Dance", "Rock", "Electronic", "K-pop"],
@@ -102,76 +105,98 @@ def generate_playlist_based_on_stocks(sp, stocks):
         "nostalgic": ["Indie", "Alternative", "Classic Rock", "R&B", "Jazz"],
         "motivated": ["Electronic", "Rock", "Pop", "Hip-hop", "Metal"]
     }
-
+    
     genre = random.choice(genre_mapping[mood])
     results = sp.search(q=f'genre:{genre}', type='track', limit=10)
     if results['tracks']['items']:
         track_uris = [track['uri'] for track in results['tracks']['items']]
-        playlist = sp.user_playlist_create(user=sp.current_user()['id'], name=f'My Playlist based on {genre}', public=True)
-        sp.user_playlist_add_tracks(user=sp.current_user()['id'], playlist_id=playlist['id'], tracks=track_uris)
+        playlist = sp.user_playlist_create(user=sp.current_user()['id'], 
+                                           name=f'My Playlist based on {genre}', 
+                                           public=True)
+        sp.user_playlist_add_tracks(user=sp.current_user()['id'], 
+                                     playlist_id=playlist['id'], 
+                                     tracks=track_uris)
         print(f"Playlist created with {genre} tracks based on stock performance.")
     else:
         print(f"No tracks found for genre '{genre}'.")
-        print("Tracks selected for the playlist:")
-    for track in results['tracks']['items']:
-        print(f"- {track['name']} by {track['artists'][0]['name']}")
 
+def cancel_open_orders():
+#cancels any open orders
+    try:
+        open_orders = alpaca.list_orders(status='open')
+        for order in open_orders:
+            alpaca.cancel_order(order.id)
+            print(f"Canceled order {order.id}")
+        if not open_orders:
+            print("No open orders to cancel.")
+    except Exception as e:
+        print(f"Error canceling orders: {e}")
 
 def is_market_open():
-#checks if the market is open 
-    clock = alpaca.get_clock()
-    return clock.is_open
+#checks if the market is open
+    try:
+        clock = alpaca.get_clock()  # This should work correctly
+        return clock.is_open
+    except Exception as e:
+        print(f"Error fetching market clock: {e}")
+        return False  # If there is an error, assume the market is closed
+
+
 
 def main():
-    #what starts the trade 
+    """Main function to run the trading logic."""
     token_info = get_spotify_token()
     if not token_info:
         return
-    sp = spotipy.Spotify(auth=token_info['access_token']) 
+    
+    sp = spotipy.Spotify(auth=token_info)
+#does this first    
+    cancel_open_orders()
+      
+    # Check if the market is open before proceeding
+    if not is_market_open():
+        print("Market is closed! Cannot execute trades.")
+        return
+ 
 
-#helps create the spotify playlist 
     stocks_data = [
-        {'symbol': 'AAPL', 'price_change': 1.5} 
+        {'symbol': 'AAPL', 'price_change': 1.5},
+        {'symbol': 'GOOGL', 'price_change': -0.5},
+        {'symbol': 'TSLA', 'price_change': 2.0}
     ]
 
-    try:
-        while True:
-            clock = alpaca.get_clock()
-            current_time = clock.timestamp
-            market_close_time = clock.next_close
+    qty=1
 
-            if not is_market_open():
-                print("Market is closed. Waiting until market opens.")
-                time.sleep(300)  
-                continue  # Skip to the next iteration if market is closed
+    while True:
+        if not is_market_open():
+            print("Market is closed. Waiting until market opens.")
+            time.sleep(240)  # Wait for a minute before checking again
+            continue  # Skip to the next iteration if market is closed
 
-   # Check if it's within 20 minutes of market close and if it is then it closes anything by selling 
-            if (market_close_time - current_time).total_seconds() <= 1200: 
-                positions = alpaca.list_positions()
-                for position in positions:
-                    print(f"Selling position for {position.symbol} before market close.")
-                    trade_stock(position.symbol, position.qty, 'sell')  
-                print("All positions sold before market close.")
-                break  
+        track = get_random_track(sp)
+        if track:
+            action = 'buy'  # Always buy the stock first
+            print(f"Determined action for AAPL: {action}")  # Log action decision
+            trade_stock('AAPL', 1, action)  # Trade AAPL based on the track
+            generate_playlist_based_on_stocks(sp, stocks_data)
 
-            track = get_random_track(sp)
-            if track:
-                positions = alpaca.list_positions()
-                current_position = next((pos for pos in positions if pos.symbol == 'AAPL'), None)
+            # Now wait for a certain period (e.g., 5 minutes) before selling
+            time.sleep(300)  
 
-                if current_position:
-                    # If there is a current position, sell it
-                    print(f"Determined action for AAPL: sell")
-                    trade_stock('AAPL', 1, 'sell')  # Sell the stock
-                else:
-                    # If no current position, buy the stock
-                    print(f"Determined action for AAPL: buy")
-                    trade_stock('AAPL', 1, 'buy')  # Buy the stock
+            action = 'sell'  # Now sell the stock
+            print(f"Determined action for AAPL: {action}")  # Log action decision
+            trade_stock('AAPL', 1, action)  # Trade AAPL again
 
-                generate_playlist_based_on_stocks(sp, stocks_data)
             time.sleep(240) 
-    except Exception as e:
-        print(f"An error occurred in the main loop: {e}")
-
+            # Determine action based on stock data
+            #if any(stock['price_change'] > 0 for stock in stocks_data):
+            #    action = 'sell'  # Sell if any stock is up
+            #else:
+            #    action = 'buy'  # Otherwise, buy
+            #action = random.choice(['buy', 'sell'])  # Randomly choose buy or sell
+            #print(f"Determined action for AAPL: {action}")  # Log action decision
+            trade_stock('AAPL', 1, action)  # Trade AAPL based on stock data
+        time.sleep(240)  
+      
 if __name__ == "__main__":
     main()

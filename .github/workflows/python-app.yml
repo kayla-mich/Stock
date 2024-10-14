@@ -4,8 +4,8 @@ on:
   push:   # This job will run every time a push is made to the repository
   schedule:
     # This cron job runs every hour, you can modify it as needed
-    - cron: '0 15-20 * * 1-5'  # Convert 10 a.m. - 3 p.m. Central Time to UTC (15:00 to 20:00 UTC)
-    - cron: '30 20 * * 1-5'    # Run again at 3:30 p.m. Central Time (20:30 UTC)
+    - cron: '0 * * * *'
+
 
 
 jobs:
