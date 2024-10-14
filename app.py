@@ -120,20 +120,6 @@ def generate_playlist_based_on_stocks(sp, stocks):
     else:
         print(f"No tracks found for genre '{genre}'.")
 
-
-def cancel_open_orders():
-#cancels any open orders
-    try:
-        open_orders = alpaca.list_orders(status='open')
-        for order in open_orders:
-            alpaca.cancel_order(order.id)
-            print(f"Canceled order {order.id}")
-        if not open_orders:
-            print("No open orders to cancel.")
-    except Exception as e:
-        print(f"Error canceling orders: {e}")
-
-
 def is_market_open():
     """Check if the market is currently open."""
     clock = alpaca.get_clock()
@@ -145,10 +131,8 @@ def main():
     if not token_info:
         return
     
-    sp = spotipy.Spotify(auth=token_info)
-#does this first    
-    cancel_open_orders()
-      
+    sp = spotipy.Spotify(auth=token_info['access_token'])  # Now token_info is a dictionary
+
     # Check if the market is open before proceeding
     if not is_market_open():
         print("Market is closed! Cannot execute trades.")
@@ -161,38 +145,27 @@ def main():
         {'symbol': 'TSLA', 'price_change': 2.0}
     ]
 
-    qty=1
-
-    while True:
-        if not is_market_open():
-            print("Market is closed. Waiting until market opens.")
-            time.sleep(240)  # Wait for a minute before checking again
-            continue  # Skip to the next iteration if market is closed
-
-        track = get_random_track(sp)
-        if track:
-            action = 'buy'  # Always buy the stock first
-            print(f"Determined action for AAPL: {action}")  # Log action decision
-            trade_stock('AAPL', 1, action)  # Trade AAPL based on the track
-            generate_playlist_based_on_stocks(sp, stocks_data)
-
-            # Now wait for a certain period (e.g., 5 minutes) before selling
-            time.sleep(300)  
-
-            action = 'sell'  # Now sell the stock
-            print(f"Determined action for AAPL: {action}")  # Log action decision
-            trade_stock('AAPL', 1, action)  # Trade AAPL again
-
-            time.sleep(240) 
-            # Determine action based on stock data
-            #if any(stock['price_change'] > 0 for stock in stocks_data):
-            #    action = 'sell'  # Sell if any stock is up
-            #else:
-            #    action = 'buy'  # Otherwise, buy
-            #action = random.choice(['buy', 'sell'])  # Randomly choose buy or sell
-            #print(f"Determined action for AAPL: {action}")  # Log action decision
-            trade_stock('AAPL', 1, action)  # Trade AAPL based on stock data
-        time.sleep(240)  
+    try:
+        for _ in range(4):  # Loop will run exactly 4 times
+            if not is_market_open():
+                print("Market is closed. Waiting until market opens.")
+                time.sleep(60)  # Wait for a minute before checking again
+                continue  # Skip to the next iteration if market is closed
+            track = get_random_track(sp)
+            if track:
+                # Determine action based on stock data
+                if any(stock['price_change'] > 0 for stock in stocks_data):
+                    action = 'sell'  # Sell if any stock is up
+                else:
+                    action = 'buy'  # Otherwise, buy
+                #action = random.choice(['buy', 'sell'])  # Randomly choose buy or sell
+                
+                print(f"Determined action for AAPL: {action}")  # Log action decision
+                trade_stock('AAPL', 1, action)  # Trade AAPL based on stock data
+                generate_playlist_based_on_stocks(sp, stocks_data)
+            time.sleep(180)  # Adjusted for testing, currently runs every 3 minutes 
+    except Exception as e:
+        print(f"An error occurred in the main loop: {e}")
       
 if __name__ == "__main__":
     main()
